@@ -173,8 +173,7 @@ def includeme(config):
     # add an OGCProxy view
     config.add_route(
         'ogcproxy', '/ogcproxy',
-        custom_predicates=(ogcproxy_route_predicate,),
-        pregenerator=MultiDommainPregenerator())
+        custom_predicates=(ogcproxy_route_predicate,))
     config.add_view('papyrus_ogcproxy.views:ogcproxy', route_name='ogcproxy')
 
     # add routes to the mapserver proxy
