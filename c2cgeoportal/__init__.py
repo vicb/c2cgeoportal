@@ -14,7 +14,8 @@ import simplejson as json
 
 from c2cgeoportal.resources import FAModels
 from c2cgeoportal.views.tilecache import load_tilecache_config
-from c2cgeoportal.lib import dbreflection, get_setting
+from c2cgeoportal.lib import dbreflection, get_setting \
+        MultiDommainPregenerator
 
 # used by (sql|form)alchemy
 srid = None
@@ -169,12 +170,16 @@ def includeme(config):
             route_name='tilecache')
 
     # add an OGCProxy view
-    config.add_route('ogcproxy', '/ogcproxy',
-                     custom_predicates=(ogcproxy_route_predicate,))
+    config.add_route(
+        'ogcproxy', '/ogcproxy',
+        custom_predicates=(ogcproxy_route_predicate,),
+        pregenerator=MultiDommainPregenerator())
     config.add_view('papyrus_ogcproxy.views:ogcproxy', route_name='ogcproxy')
 
     # add routes to the mapserver proxy
-    config.add_route('mapserverproxy', '/mapserv_proxy')
+    config.add_route(
+        'mapserverproxy', '/mapserv_proxy',
+        pregenerator=MultiDommainPregenerator())
 
     # add routes to csv view
     config.add_route('csvecho', '/csv')
