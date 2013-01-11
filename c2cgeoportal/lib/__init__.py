@@ -20,11 +20,11 @@ def get_setting(settings, path, default=None):
 @implementer(IRoutePregenerator)
 class MultiDommainPregenerator:
     def __call__(self, request, elements, kw):
-        app_url = request.registry.settings['app_url']
-        if isinstance(app_url, list):
-            index = kw['url_index'] if 'url_index' in kw \
-                    else randint(0, len(app_url) - 1)
-            kw['_app_url'] = app_url[index]
+        base_url = request.registry.settings['base_url']
+        if base_url and 'subdomain' in kw:
+            kw['_app_url'] = (base_url %
+                {'sub': kw['subdomain']}) \
+                + request.script_name
         return elements, kw
 
 @implementer(IStaticURLInfo)
@@ -36,11 +36,16 @@ class MultiDommainStaticURLInfo(StaticURLInfo):
                 subpath = path[len(spec):]
                 if WIN:
                     subpath = subpath.replace('\\', '/') # windows
-                print url
                 if url is None:
                     kw['subpath'] = subpath
-                    print route_name
-                    return request.route_url(route_name, **kw)
+                    sub_url = request.registry.settings['sub_url']
+                    if isinstance(sub_url, list):
+                        return request.route_url(
+                            route_name,
+                            subdomain=sub_url[hash(subpath) % len(sub_url)],
+                            **kw)
+                    else:
+                        return request.route_url(route_name, **kw)
                 else:
                     subpath = url_quote(subpath)
                     return urljoin(url, subpath)
@@ -49,6 +54,5 @@ class MultiDommainStaticURLInfo(StaticURLInfo):
     def add(self, config, name, spec, **extra):
         if 'pregenerator' not in extra:
             extra['pregenerator'] = MultiDommainPregenerator()
-        print extra
         return super(MultiDommainStaticURLInfo, self) \
             .add(config, name, spec, **extra)

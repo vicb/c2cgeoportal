@@ -61,6 +61,16 @@ print_url: http://${vars:host}:8080/print-c2cgeoportal-${vars:parent_instanceid}
 # This value mean that we use the parent tiles
 tilecache_url: http://${vars:host}/${vars:parent_instanceid}/wsgi/tilecache
 
+# The base URL used to generate the sub domain URL
+# %(sub)s will be replaced by the sub domain value.
+base_url: http://%(sub)s.${vars:host}
+# The used sub domain for the static resources
+sub_url:
+- s1
+- s2
+- s3
+- s4
+
 # Checker configuration
 checker:
     print_template: 1 A4 portrait

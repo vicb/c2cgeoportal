@@ -15,7 +15,7 @@ import simplejson as json
 
 from c2cgeoportal.resources import FAModels
 from c2cgeoportal.views.tilecache import load_tilecache_config
-from c2cgeoportal.lib import dbreflection, get_setting \
+from c2cgeoportal.lib import dbreflection, get_setting, \
         MultiDommainPregenerator, MultiDommainStaticURLInfo
 
 # used by (sql|form)alchemy
@@ -166,7 +166,9 @@ def includeme(config):
 
     # add a TileCache view
     load_tilecache_config(config.get_settings())
-    config.add_route('tilecache', '/tilecache{path:.*?}')
+    config.add_route(
+        'tilecache', '/tilecache{path:.*?}',
+        pregenerator=MultiDommainPregenerator())
     config.add_view(view='c2cgeoportal.views.tilecache:tilecache',
             route_name='tilecache')
 
