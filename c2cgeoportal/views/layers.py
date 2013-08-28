@@ -29,6 +29,7 @@ from pyramid.httpexceptions import (HTTPInternalServerError, HTTPNotFound,
                                     HTTPBadRequest, HTTPForbidden)
 from pyramid.view import view_config
 
+from sqlalchemy import distinct
 from sqlalchemy.orm.exc import NoResultFound, MultipleResultsFound
 from sqlalchemy.sql import and_
 from sqlalchemy.orm.util import class_mapper
@@ -43,8 +44,8 @@ from shapely.geometry import asShape
 
 from papyrus.protocol import Protocol, create_filter
 
-from c2cgeoportal.lib.dbreflection import get_class
-from c2cgeoportal.models import DBSession, Layer, RestrictionArea, Role
+from c2cgeoportal.lib.dbreflection import get_class, get_table
+from c2cgeoportal.models import DBSessions, DBSession, Layer, RestrictionArea, Role
 
 
 def _get_geom_col_info(layer):
@@ -280,3 +281,28 @@ def metadata(request):
     if not layer.public and request.user is None:
         raise HTTPNotFound()
     return get_class(str(layer.geoTable))
+
+@view_config(route_name='layers_enumerate_attribute_values', renderer='json')
+def enumerate_attribute_values(request):
+    config = request.registry.settings.get('layers_enum', None)
+    if config is None:
+        raise HTTPNotFound()
+    layername = request.matchdict['layer_name']
+    fieldname = request.matchdict['field_name']
+    # TODO check if layer is public or not
+    
+    if layername not in config:
+        raise HTTPBadRequest('Unknown layer: %s' % layername)
+
+    layerinfos = config[layername]
+    if fieldname not in layerinfos['attributes']:
+        raise HTTPBadRequest('Unknown attribute: %s' % fieldname)
+    dbsession = DBSessions[layerinfos['dbsession']]
+    attrinfos = layerinfos['attributes'][fieldname]
+    layertable = get_table(attrinfos['table'], dbsession)
+
+    values = dbsession.query(distinct(getattr(layertable.columns, fieldname))).all()
+    enum = { 
+        'items': [{ 'label': value[0], 'value': value[0] } for value in values]
+    }   
+    return enum
